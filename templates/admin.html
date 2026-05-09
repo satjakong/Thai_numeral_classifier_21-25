@@ -2,42 +2,99 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Upload Model</title>
+    <title>Admin Dashboard - Thai Numeral</title>
     <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
-        .upload-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block;}
-        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-top: 15px;}
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; }
+        
+        .container { 
+            display: flex; 
+            justify-content: center; 
+            gap: 30px; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            flex-wrap: wrap;
+        }
+        
+        .panel { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            flex: 1; 
+            min-width: 320px; 
+            text-align: center; 
+        }
+        
+        h3 { color: #0056b3; margin-top: 0; border-bottom: 2px solid #f4f4f9; padding-bottom: 10px;}
+        .btn { padding: 10px 15px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; color: white; margin: 5px; transition: 0.2s;}
+        .btn:hover { opacity: 0.8; }
+        .btn-blue { background-color: #007bff; }
+        .btn-green { background-color: #28a745; width: 100%; margin-top: 15px;}
+        .btn-red { background-color: #dc3545; }
+        .btn-orange { background-color: #fd7e14; }
+        
+        input[type="file"] { padding: 10px; margin: 20px 0; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; width: 90%;}
+        
+        canvas { border: 2px solid #333; cursor: crosshair; background-color: black; border-radius: 8px; margin-top: 15px;}
+        select { padding: 8px 15px; font-size: 16px; border-radius: 5px; width: 80%; border: 1px solid #ccc;}
+        .status { margin-top: 15px; font-weight: bold; color: #d63384; }
+        .back-link { display: block; text-align: center; margin-top: 30px; font-size: 18px; }
     </style>
 </head>
 <body>
 
-    <div class="upload-box">
-        <h2>อัปโหลดโมเดล (.h5)</h2>
-        <input type="file" id="fileInput" accept=".h5">
-        <br>
-        <button class="btn" onclick="uploadModel()">อัปโหลดเข้าสู่ระบบ</button>
-        <p id="status"></p>
-        <br>
-        <a href="/">กลับไปหน้า User</a>
+    <div class="header">
+        <h2>🛠️ ระบบจัดการหลังบ้าน (Admin Dashboard)</h2>
     </div>
 
-    <script>
-        function uploadModel() {
-            const fileInput = document.getElementById('fileInput');
-            const statusText = document.getElementById('status');
+    <div class="container">
+        
+        <div class="panel">
+            <h3>📤 อัปโหลดโมเดล (.h5)</h3>
+            <p>เลือกไฟล์โมเดลที่เทรนเสร็จแล้วเพื่ออัปเดตระบบ</p>
+            <form id="uploadForm">
+                <input type="file" id="modelFile" accept=".h5" required>
+                <button type="submit" class="btn btn-blue" style="width: 100%;">อัปโหลดเข้าระบบ</button>
+            </form>
+            <div id="uploadResult" class="status"></div>
+        </div>
+
+        <div class="panel">
+            <h3>✍️ เก็บข้อมูลลายมือ (Data Collection)</h3>
+            <label for="classSelect"><b>เลือกตัวเลขที่ต้องการวาด:</b></label><br><br>
+            <select id="classSelect">
+                <option value="๒๑">๒๑ (21)</option>
+                <option value="๒๒">๒๒ (22)</option>
+                <option value="๒๓">๒๓ (23)</option>
+                <option value="๒๔">๒๔ (24)</option>
+                <option value="๒๕">๒๕ (25)</option>
+            </select>
+
+            <canvas id="collectCanvas" width="280" height="280"></canvas><br>
             
-            if(fileInput.files.length === 0) {
-                statusText.innerText = "กรุณาเลือกไฟล์ .h5";
-                statusText.style.color = "red";
-                return;
-            }
+            <button class="btn btn-green" onclick="saveImage()">บันทึกรูปภาพ (Save)</button>
+            <button class="btn btn-red" onclick="clearCollectCanvas()">เคลียร์ (Clear)</button>
+            
+            <div id="saveStatus" class="status">ยังไม่ได้บันทึกรูปภาพในรอบนี้</div>
+        </div>
 
+    </div>
+
+    <a href="/" class="back-link">กลับไปหน้าใช้งานหลัก (User Page)</a>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('modelFile');
             const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append("file", file);
+            if(!file) return;
 
-            statusText.innerText = "กำลังอัปโหลด...";
-            statusText.style.color = "blue";
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('uploadResult').innerText = "กำลังอัปโหลด...";
+            document.getElementById('uploadResult').style.color = "#fd7e14";
 
             fetch('/upload_model', {
                 method: 'POST',
@@ -45,12 +102,77 @@
             })
             .then(response => response.json())
             .then(data => {
-                statusText.innerText = data.message;
-                statusText.style.color = data.message.includes("successfully") ? "green" : "red";
+                document.getElementById('uploadResult').innerText = data.message;
+                document.getElementById('uploadResult').style.color = "#28a745";
+                fileInput.value = ""; 
             })
-            .catch(error => {
-                statusText.innerText = "การอัปโหลดล้มเหลว";
-                statusText.style.color = "red";
+            .catch(err => {
+                document.getElementById('uploadResult').innerText = "เกิดข้อผิดพลาดในการอัปโหลด";
+                document.getElementById('uploadResult').style.color = "#dc3545";
+            });
+        });
+
+        const canvas = document.getElementById('collectCanvas');
+        const ctx = canvas.getContext('2d');
+        let painting = false;
+        let imgCount = 0;
+
+        function initCanvas() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        initCanvas();
+
+        canvas.addEventListener('mousedown', (e) => { painting = true; draw(e); });
+        canvas.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(e) {
+            if (!painting) return;
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'white';
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function clearCollectCanvas() {
+            initCanvas();
+        }
+
+        function saveImage() {
+            const numClass = document.getElementById('classSelect').value;
+
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = 28;
+            smallCanvas.height = 28;
+            const smallCtx = smallCanvas.getContext('2d');
+            
+            smallCtx.drawImage(canvas, 0, 0, 28, 28);
+
+            const dataURL = smallCanvas.toDataURL('image/png');
+            
+            document.getElementById('saveStatus').innerText = "กำลังบันทึก...";
+            document.getElementById('saveStatus').style.color = "#fd7e14";
+
+            fetch('/save_dataset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataURL, class: numClass })
+            })
+            .then(response => response.json())
+            .then(data => {
+                imgCount++;
+                document.getElementById('saveStatus').innerText = `${data.message} (วาดไปแล้ว ${imgCount} รูป)`;
+                document.getElementById('saveStatus').style.color = "#28a745";
+                clearCollectCanvas(); 
+            })
+            .catch(err => {
+                document.getElementById('saveStatus').innerText = "เกิดข้อผิดพลาดในการบันทึก";
+                document.getElementById('saveStatus').style.color = "#dc3545";
             });
         }
     </script>

@@ -5,6 +5,7 @@ import cv2
 import base64
 import os
 from werkzeug.utils import secure_filename
+import time
 
 app = Flask(__name__)
 MODEL_DIR = 'models'
@@ -88,5 +89,26 @@ def upload_model():
         
     return jsonify({'message': 'Invalid file type. Must be .h5'}), 400
 
+@app.route('/save_dataset', methods=['POST'])
+def save_dataset():
+    data = request.json
+    img_data_b64 = data['image']
+    num_class = data['class'] 
+
+    target_dir = os.path.join('dataset', num_class)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    img_data = base64.b64decode(img_data_b64.split(',')[1])
+    np_arr = np.frombuffer(img_data, np.uint8)
+    img = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+
+    filename = f"{num_class}_handwritten_{int(time.time()*1000)}.png"
+    filepath = os.path.join(target_dir, filename)
+    cv2.imwrite(filepath, img)
+
+    return jsonify({'message': f'เซฟลง {target_dir} สำเร็จ!'})
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
