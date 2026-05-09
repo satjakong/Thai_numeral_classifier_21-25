@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Upload Model</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        .upload-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block;}
+        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-top: 15px;}
+    </style>
+</head>
+<body>
+
+    <div class="upload-box">
+        <h2>อัปโหลดโมเดล (.h5)</h2>
+        <input type="file" id="fileInput" accept=".h5">
+        <br>
+        <button class="btn" onclick="uploadModel()">อัปโหลดเข้าสู่ระบบ</button>
+        <p id="status"></p>
+        <br>
+        <a href="/">กลับไปหน้า User</a>
+    </div>
+
+    <script>
+        function uploadModel() {
+            const fileInput = document.getElementById('fileInput');
+            const statusText = document.getElementById('status');
+            
+            if(fileInput.files.length === 0) {
+                statusText.innerText = "กรุณาเลือกไฟล์ .h5";
+                statusText.style.color = "red";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            statusText.innerText = "กำลังอัปโหลด...";
+            statusText.style.color = "blue";
+
+            fetch('/upload_model', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                statusText.innerText = data.message;
+                statusText.style.color = data.message.includes("successfully") ? "green" : "red";
+            })
+            .catch(error => {
+                statusText.innerText = "การอัปโหลดล้มเหลว";
+                statusText.style.color = "red";
+            });
+        }
+    </script>
+</body>
+</html>

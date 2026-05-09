@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Thai Numeral Predictor (๒๑-๒๕)</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        canvas { border: 2px solid #333; cursor: crosshair; background-color: black; border-radius: 8px;}
+        .btn { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; color: white;}
+        .btn-predict { background-color: #28a745; }
+        .btn-clear { background-color: #dc3545; }
+        #result { font-size: 24px; font-weight: bold; margin-top: 20px; color: #0056b3; }
+        .model-selector { margin-bottom: 20px; font-size: 18px; }
+        select { padding: 5px 10px; font-size: 16px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>วาดเลขไทย ๒๑ ถึง ๒๕</h2>
+    
+    <div class="model-selector">
+        <label for="modelSelect"><b>เลือกโมเดลที่ต้องการใช้:</b> </label>
+        <select id="modelSelect">
+            <option value="">กำลังโหลดโมเดล...</option>
+        </select>
+    </div>
+
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <br>
+    <button class="btn btn-predict" onclick="predict()">ทำนายผล (Predict)</button>
+    <button class="btn btn-clear" onclick="clearCanvas()">เคลียร์ (Clear)</button>
+
+    <div id="result">คำทำนายจะแสดงที่นี่</div>
+    <p><a href="/admin">ไปที่หน้า Admin</a></p>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let painting = false;
+
+        function initCanvas() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        initCanvas();
+
+        function loadModels() {
+            fetch('/get_models')
+            .then(response => response.json())
+            .then(models => {
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = ''; 
+                if(models.length === 0) {
+                    select.innerHTML = '<option value="">ไม่มีโมเดลในระบบ</option>';
+                    return;
+                }
+                models.forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.innerText = model;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => console.error("โหลดโมเดลไม่ได้", err));
+        }
+        
+        loadModels();
+
+        canvas.addEventListener('mousedown', (e) => { painting = true; draw(e); });
+        canvas.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(e) {
+            if (!painting) return;
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'white';
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function clearCanvas() {
+            initCanvas();
+            document.getElementById('result').innerText = "คำทำนายจะแสดงที่นี่";
+        }
+
+        function predict() {
+            const selectedModel = document.getElementById('modelSelect').value;
+            if(!selectedModel) {
+                document.getElementById('result').innerText = "กรุณาอัปโหลดและเลือกโมเดล";
+                return;
+            }
+
+            document.getElementById('result').innerText = "กำลังประมวลผล...";
+            const dataURL = canvas.toDataURL('image/png');
+            
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataURL, model: selectedModel })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    document.getElementById('result').innerText = data.error;
+                } else {
+                    document.getElementById('result').innerText = `ทำนาย: ${data.prediction} (ความมั่นใจ: ${data.confidence})`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('result').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+            });
+        }
+    </script>
+</body>
+</html>
