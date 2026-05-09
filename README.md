@@ -21,7 +21,7 @@ Tech Stack
 
 Installation & Setup
 
-1. Clone โปรเจกต์นี้ลงเครื่อง
+1.Clone โปรเจกต์นี้ลงเครื่อง
    
 2.ติดตั้ง Library ที่จำเป็น
 pip install flask tensorflow opencv-python numpy pillow
@@ -29,7 +29,7 @@ pip install flask tensorflow opencv-python numpy pillow
 3.รันเซิร์ฟเวอร์ Web Application
 python app.py
 
-4. เปิด Web Browser และเข้าไปที่ http://127.0.0.1:5000
+4.เปิด Web Browser และเข้าไปที่ http://127.0.0.1:5000
 
 MLOps Workflow
 โปรเจกต์นี้ออกแบบมาให้สามารถพัฒนาความแม่นยำของโมเดลได้อย่างต่อเนื่อง
